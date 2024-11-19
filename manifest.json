@@ -1,0 +1,19 @@
+{
+    "manifest_version": 3,
+    "name": "Redmine Time Tracker",
+    "version": "1.0",
+    "description": "Adds time tracking functionality to Redmine time entries",
+    "permissions": ["activeTab", "storage"],
+    "content_scripts": [
+      {
+        "matches": [
+          "*://*/*time_entries*",
+          "*://*/*time_entries/new*",
+          "*://*/*time_entries/*/edit*",
+          "*://*/*issues/*"
+        ],
+        "js": ["content.js"],
+        "css": ["styles.css"]
+      }
+    ]
+  }

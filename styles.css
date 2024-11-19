@@ -1,0 +1,39 @@
+.timer-controls {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 10px;
+    gap: 5px;
+  }
+  
+  .timer-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  
+  .play-button {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+  .pause-button {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  .timer-display {
+    font-family: monospace;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 5px 12px;
+    background: #f5f5f5;
+    border-radius: 4px;
+    margin-right: 5px;
+    color: #2f4f4f;
+    border: 1px solid #ddd;
+    min-width: 85px;
+    text-align: center;
+    display: inline-block;
+  }
