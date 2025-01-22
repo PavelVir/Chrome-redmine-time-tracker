@@ -14,6 +14,13 @@ A Chrome extension that adds enhanced time tracking functionality to Redmine tim
 
 ## Installation
 
+### Для пользователей
+1. Скачайте или клонируйте этот репозиторий
+2. Откройте Chrome и перейдите по адресу `chrome://extensions/`
+3. Включите "Режим разработчика" в правом верхнем углу
+4. Нажмите "Загрузить распакованное расширение"
+5. Выберите папку, содержащую файлы расширения
+
 ### For Users
 
 1. Download or clone this repository
