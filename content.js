@@ -1,46 +1,24 @@
 class RedmineTimer {
   constructor() {
     this.isRunning = false;
-    this.startTime = 0;
+    this.startTime = Date.now();
     this.elapsedTime = 0;
     this.timerInterval = null;
-    this.timeInput = document.querySelector('#time_entry_hours');
-    if (!this.timeInput) {
-      return;
-    }
-    this.setup();
+    // Initialize input fields
+    document.getElementById('time_entry_hours').addEventListener('input', (e) => {
+      const hours = parseFloat(e.target.value.replace(',', '.')); // Convert comma to dot for decimals
+      if (!isNaN(hours)) {
+        this.setTime(hours);
+      }
+    });
   }
 
   setup() {
     this.createControls();
     this.loadState();
-    this.setupEventListeners();
   }
 
   createControls() {
-    // Create container
-    this.container = document.createElement('div');
-    this.container.className = 'timer-controls';
-
-    // Timer display
-    this.timerDisplay = document.createElement('span');
-    this.timerDisplay.className = 'timer-display';
-    this.timerDisplay.textContent = '00:00:00';
-
-    // Manual input
-    this.manualInput = document.createElement('input');
-    this.manualInput.type = 'text';
-    this.manualInput.className = 'timer-manual-input';
-    this.manualInput.placeholder = 'Hours';
-    this.manualInput.title = 'Enter hours (e.g. 0.5)';
-
-    // Buttons
-    this.playButton = this.createButton('Play', 'play-button');
-    this.pauseButton = this.createButton('Pause', 'pause-button');
-    this.resetButton = this.createButton('Reset', 'reset-button');
-    this.pauseButton.style.display = 'none';
-
-    // Add everything to container
     this.container.append(
       this.timerDisplay,
       this.manualInput,
@@ -50,12 +28,12 @@ class RedmineTimer {
     );
 
     // Add container after the time input field
-    this.timeInput.parentNode.appendChild(this.container);
+    document.getElementById('time_entry_hours').appendChild(this.container);
   }
 
   createButton(text, className) {
     const button = document.createElement('button');
-    button.type = 'button'; // Prevent form submission
+    button.type = 'button';
     button.textContent = text;
     button.className = `timer-button ${className}`;
     return button;
@@ -77,9 +55,9 @@ class RedmineTimer {
       this.resetTimer();
     });
 
-    this.manualInput.addEventListener('change', (e) => {
+    document.getElementById('manual_input').addEventListener('input', (e) => {  // Changed to manualInput
       const hours = parseFloat(e.target.value.replace(',', '.'));
-      if (!isNaN(hours) && hours >= 0) {
+      if (!isNaN(hours)) {
         this.setTime(hours);
       }
     });
@@ -88,11 +66,10 @@ class RedmineTimer {
   startTimer() {
     if (!this.isRunning) {
       this.isRunning = true;
-      this.startTime = Date.now() - this.elapsedTime;
+      this.startTime = Date.now() - this.elapsedTime; // Set startTime now
       this.timerInterval = setInterval(() => this.updateTimer(), 1000);
       this.playButton.style.display = 'none';
       this.pauseButton.style.display = 'inline-block';
-      this.saveState();
     }
   }
 
@@ -102,14 +79,13 @@ class RedmineTimer {
       clearInterval(this.timerInterval);
       this.playButton.style.display = 'inline-block';
       this.pauseButton.style.display = 'none';
-      this.saveState();
     }
   }
 
   resetTimer() {
-    this.pauseTimer();
+    // Ensure timer starts fresh
     this.elapsedTime = 0;
-    this.startTime = 0;
+    this.startTime = Date.now();
     this.updateDisplay();
     this.timeInput.value = '0';
     this.manualInput.value = '';
@@ -117,23 +93,33 @@ class RedmineTimer {
   }
 
   setTime(hours) {
-    this.elapsedTime = Math.floor(hours * 3600000);
-    this.timeInput.value = hours.toString();
-    this.manualInput.value = hours.toString();
-    this.updateDisplay();
+    this.elapsedTime = Math.floor(hours * 3600000); // Convert hours to milliseconds
+    this.timeInput.value = `${hours.toFixed(2)}${hours % 1 >= 0 ? '.' : ''}`; // Fix time display formatting
+    this.manualInput.value = this.getTimeString(); // Update manual input too
+
     if (this.isRunning) {
       this.startTime = Date.now() - this.elapsedTime;
     }
+
+    this.updateDisplay();
     this.saveState();
   }
 
   updateTimer() {
-    this.elapsedTime = Date.now() - this.startTime;
-    this.updateDisplay();
-    // Update Redmine input
+    const now = Date.now();
+    this_elapsed_time = now - this.startTime; // Use this to avoid race condition
+    this.elapsedTime = Math.floor(this_elapsed_time / 1000); // Update in seconds
+
+    this.updateDisplay(); // Ensure display is always current
+
+    // Update Redmine input values
     const hours = (this.elapsedTime / 3600000).toFixed(2);
-    this.timeInput.value = hours;
-    this.manualInput.value = hours;
+    this.timeInput.value = `${hours}">${this.getSeconds().padStart(2, '0')}`;
+    this.manualInput.value = `${hours} ${this.getSeconds().padStart(2, '0')}`;
+
+    if (!this.isRunning) {
+      this.saveState();
+    }
   }
 
   updateDisplay() {
@@ -160,25 +146,19 @@ class RedmineTimer {
 
   async loadState() {
     try {
-      // Check if we're editing an existing entry
       const isEditMode = window.location.href.includes('/edit');
-      
-      if (isEditMode && this.timeInput.value) {
-        // Use the existing value
-        const hours = parseFloat(this.timeInput.value.replace(',', '.'));
-        if (!isNaN(hours)) {
-          this.setTime(hours);
-        }
+      if (isEditMode) {
+        this.timeInput.value = '0';
       } else {
-        // Try to load saved state
-        const result = await chrome.storage.local.get('timerState');
-        if (result.timerState) {
-          const { isRunning, startTime, elapsedTime } = result.timerState;
-          this.elapsedTime = elapsedTime;
-          this.startTime = startTime;
-          if (isRunning) {
-            this.startTimer();
-          } else {
+        // Load from storage
+        const saved = await chrome.storage.local.get('timerState');
+        if (saved) {
+          this.elapsedTime = saved.elapsedTime;
+          this.startTime = saved.startTime;
+          this.isRunning = saved.isRunning;
+
+          // Force recalculate in case something is wrong
+          if (!this.isRunning) {
             this.updateDisplay();
           }
         }
@@ -187,12 +167,17 @@ class RedmineTimer {
       console.error('Error loading state:', error);
     }
   }
+
+  async startTimer() {  // Changed to ensure initial start sets startTime correctly
+    if (!this.isRunning) {
+      this.isRunning = true;
+      this.startTime = Date.now() - this.elapsedTime; // Set now
+      this.timerInterval = setInterval(() => this.updateTimer(), 1000);
+    }
+  }
+
+
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+  // Initial setup
   new RedmineTimer();
-});
-
-// Also try to initialize immediately
-new RedmineTimer();
