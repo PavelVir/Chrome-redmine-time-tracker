@@ -15,6 +15,8 @@ class RedmineTimer {
     this.createControls();
     this.loadState();
     this.setupEventListeners();
+    this.requestNotificationPermission();
+    this.setupMessageListener();
   }
 
   createControls() {
@@ -75,6 +77,161 @@ class RedmineTimer {
         this.setTime(hours);
       }
     });
+    
+    // Listen for form submission to save task info
+    const form = this.timeInput.closest('form');
+    if (form) {
+      form.addEventListener('submit', () => this.saveTaskInfo());
+    }
+  }
+  
+  // Setup listener for messages from popup
+  setupMessageListener() {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      const response = this.handleMessage(message);
+      if (response) {
+        sendResponse(response);
+      }
+    });
+  }
+  
+  // Handle messages from popup
+  handleMessage(message) {
+    if (message.action === 'startTimer') {
+      this.startTimer();
+      return true;
+    }
+    
+    if (message.action === 'pauseTimer') {
+      this.pauseTimer();
+      return true;
+    }
+    
+    if (message.action === 'resetTimer') {
+      this.resetTimer();
+      return true;
+    }
+    
+    if (message.action === 'setTime') {
+      this.setTime(message.hours);
+      return true;
+    }
+    
+    if (message.action === 'getState') {
+      return {
+        isRunning: this.isRunning,
+        elapsedTime: this.elapsedTime,
+        startTime: this.startTime
+      };
+    }
+    
+    return false;
+  }
+  
+  // Save task information when submitting form
+  saveTaskInfo() {
+    try {
+      // Get issue ID and title
+      const issueIdMatch = window.location.href.match(/issues\/(\d+)/);
+      let issueId = issueIdMatch ? issueIdMatch[1] : null;
+      
+      if (!issueId) {
+        // Try to find on the page
+        const issueField = document.querySelector('#time_entry_issue_id');
+        if (issueField) {
+          issueId = issueField.value;
+        }
+      }
+      
+      // If no ID found, exit
+      if (!issueId) return;
+      
+      // Get issue title
+      let title = null;
+      const issueTitle = document.querySelector('.subject h3');
+      if (issueTitle) {
+        title = issueTitle.textContent.trim();
+      } else {
+        // Try another selector
+        const selectField = document.querySelector('#time_entry_issue_id option:checked');
+        if (selectField) {
+          title = selectField.textContent.trim();
+        }
+      }
+      
+      // If no title found, use a fallback
+      title = title || `Task #${issueId}`;
+      
+      // Get spent time
+      const hours = parseFloat(this.timeInput.value.replace(',', '.'));
+      
+      // Save task info
+      if (!isNaN(hours) && hours > 0) {
+        chrome.runtime.sendMessage({
+          action: 'saveTask',
+          task: {
+            issueId,
+            title,
+            hours,
+            url: window.location.href
+          }
+        });
+      }
+    } catch (e) {
+      console.info('Error saving task info:', e);
+    }
+  }
+
+  // Request notification permission
+  requestNotificationPermission() {
+    if (Notification && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+  }
+
+  // Show notification
+  showNotification(title, message) {
+    // Try using background script
+    if (chrome && chrome.runtime && chrome.runtime.id) {
+      try {
+        chrome.runtime.sendMessage({
+          action: 'showNotification',
+          title: title,
+          message: message,
+          icon: 'icons/icon128.svg'
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.info('Background notification failed:', chrome.runtime.lastError);
+            this.fallbackNotification(title, message);
+          }
+        });
+        return;
+      } catch (e) {
+        console.info('Failed to send message to background:', e);
+      }
+    }
+    
+    this.fallbackNotification(title, message);
+  }
+  
+  // Fallback notification methods
+  fallbackNotification(title, message) {
+    // Try standard Notification API
+    if (Notification && Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body: message,
+          icon: 'icons/icon128.svg'
+        });
+        return;
+      } catch (e) {
+        console.info('Standard Notification API failed:', e);
+      }
+    }
+    
+    // If all else fails, use alert as a last resort
+    console.info('Using alert as a fallback notification');
+    alert(`${title}: ${message}`);
   }
 
   startTimer() {
@@ -85,6 +242,37 @@ class RedmineTimer {
       this.playButton.style.display = 'none';
       this.pauseButton.style.display = 'inline-block';
       this.saveState();
+
+      // Set reminder based on settings
+      this.setupReminderTimeout();
+    }
+  }
+  
+  // Set up reminder timeout based on settings
+  setupReminderTimeout() {
+    try {
+      // Get settings
+      chrome.storage.local.get('settings', (result) => {
+        const settings = result.settings || { reminderInterval: 60, enableReminders: true };
+        
+        // If reminders are disabled, exit
+        if (!settings.enableReminders) return;
+        
+        // Set timer with specified interval
+        const reminderTime = settings.reminderInterval * 60 * 1000; // Convert minutes to milliseconds
+        
+        this.reminderTimeout = setTimeout(() => {
+          this.showNotification(
+            'Time Tracking Reminder', 
+            `You have been working for ${settings.reminderInterval} minutes continuously. Consider taking a break.`
+          );
+          
+          // Set up next reminder
+          this.setupReminderTimeout();
+        }, reminderTime);
+      });
+    } catch (e) {
+      console.info('Failed to set reminder timeout:', e);
     }
   }
 
@@ -95,6 +283,12 @@ class RedmineTimer {
       this.playButton.style.display = 'inline-block';
       this.pauseButton.style.display = 'none';
       this.saveState();
+      
+      // Clear reminder timer
+      if (this.reminderTimeout) {
+        clearTimeout(this.reminderTimeout);
+        this.reminderTimeout = null;
+      }
     }
   }
 
@@ -120,9 +314,7 @@ class RedmineTimer {
   updateTimer() {
     this.elapsedTime = Date.now() - this.startTime;
     this.updateDisplay();
-    // Update Redmine input
-    const hours = (this.elapsedTime / 3600000).toFixed(2);
-    this.timeInput.value = hours;
+    // Updating Redmine input happens in updateDisplay()
   }
 
   updateDisplay() {
@@ -132,10 +324,42 @@ class RedmineTimer {
 
     this.timerDisplay.textContent = 
       `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    
+    // Update Redmine input field based on time format
+    this.updateRedmineInput();
+  }
+
+  // Update Redmine input based on format
+  updateRedmineInput() {
+    chrome.storage.local.get('settings', (result) => {
+      const settings = result.settings || { timeFormat: 'decimal' };
+      const hours = this.elapsedTime / 3600000;
+      
+      if (settings.timeFormat === 'decimal') {
+        // Decimal format
+        this.timeInput.value = hours.toFixed(2);
+      } else {
+        // HH:MM format
+        const wholeHours = Math.floor(hours);
+        const minutes = Math.floor((hours - wholeHours) * 60);
+        this.timeInput.value = `${wholeHours}:${String(minutes).padStart(2, '0')}`;
+      }
+    });
   }
 
   async saveState() {
     try {
+      if (!chrome.runtime || !chrome.runtime.id) {
+        console.info('Extension context is invalid, using localStorage instead');
+        // Fallback to localStorage
+        localStorage.setItem('redmineTimerState', JSON.stringify({
+          isRunning: this.isRunning,
+          startTime: this.startTime,
+          elapsedTime: this.elapsedTime
+        }));
+        return;
+      }
+      
       const state = {
         isRunning: this.isRunning,
         startTime: this.startTime,
@@ -144,6 +368,16 @@ class RedmineTimer {
       await chrome.storage.local.set({ timerState: state });
     } catch (error) {
       console.info('Error saving state:', error);
+      // Fallback to localStorage
+      try {
+        localStorage.setItem('redmineTimerState', JSON.stringify({
+          isRunning: this.isRunning,
+          startTime: this.startTime,
+          elapsedTime: this.elapsedTime
+        }));
+      } catch (e) {
+        console.info('Fallback storage also failed:', e);
+      }
     }
   }
 
@@ -160,9 +394,34 @@ class RedmineTimer {
         }
       } else {
         // Try to load saved state
-        const result = await chrome.storage.local.get('timerState');
-        if (result.timerState) {
-          const { isRunning, startTime, elapsedTime } = result.timerState;
+        let state = null;
+        
+        // First try chrome.storage if extension context is valid
+        if (chrome.runtime && chrome.runtime.id) {
+          try {
+            const result = await chrome.storage.local.get('timerState');
+            if (result.timerState) {
+              state = result.timerState;
+            }
+          } catch (e) {
+            console.info('Chrome storage failed, trying fallback', e);
+          }
+        }
+        
+        // If that fails, try localStorage
+        if (!state) {
+          try {
+            const fallbackData = localStorage.getItem('redmineTimerState');
+            if (fallbackData) {
+              state = JSON.parse(fallbackData);
+            }
+          } catch (e) {
+            console.info('Fallback storage failed too:', e);
+          }
+        }
+        
+        if (state) {
+          const { isRunning, startTime, elapsedTime } = state;
           this.elapsedTime = elapsedTime;
           this.startTime = startTime;
           if (isRunning) {

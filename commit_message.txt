@@ -1,0 +1,12 @@
+Add enhanced features and fix extension context issues
+
+- Add popup interface for quick access to timer controls
+- Add options page for customizable settings
+- Implement background script for reliable notifications
+- Fix "Extension context invalidated" errors with localStorage fallback
+- Add work break reminders with configurable intervals
+- Support for different time formats (decimal or HH:MM)
+- Track and display recent tasks history
+- Add SVG icons for the extension
+- Add improved error handling and user feedback
+- Update README with comprehensive documentation

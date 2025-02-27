@@ -1,6 +1,6 @@
 # Redmine Time Tracker Chrome Extension
 
-A Chrome extension that adds enhanced time tracking functionality to Redmine time entries. This extension provides a convenient timer interface with manual time input and tracking capabilities.
+A Chrome extension that adds enhanced time tracking functionality to Redmine time entries. This extension provides a convenient timer interface with powerful features for tracking your work time efficiently.
 
 ## Features
 
@@ -11,6 +11,11 @@ A Chrome extension that adds enhanced time tracking functionality to Redmine tim
 - 💾 Automatic state preservation between page reloads
 - 🔄 Synchronization with Redmine's time entry field
 - 📱 Responsive and user-friendly interface
+- 🔔 Work break reminders with customizable intervals
+- ⚙️ Configurable time format (decimal or HH:MM)
+- 📊 Recent tasks tracking and history
+- 🎯 Quick access popup for managing timers
+- 🔒 Fallback storage when extension context is invalidated
 
 ## Installation
 
@@ -44,13 +49,23 @@ cd redmine-time-tracker
 ```
 redmine-time-tracker/
 ├── manifest.json        # Extension configuration
-├── content.js          # Main extension logic
-├── styles.css          # Styling for timer interface
-└── README.md          # Documentation
+├── content.js           # Main extension logic for Redmine pages
+├── background.js        # Background service worker for notifications
+├── popup.html           # Quick access popup interface
+├── popup.js             # Popup logic
+├── options.html         # Settings page
+├── options.js           # Settings logic
+├── styles.css           # Styling for timer interface
+├── icons/               # Extension icons
+│   ├── icon16.svg       # Small icon
+│   ├── icon48.svg       # Medium icon
+│   └── icon128.svg      # Large icon
+└── README.md            # Documentation
 ```
 
 ## Usage
 
+### Basic Usage
 1. Navigate to a Redmine time entry page or issue page
 2. The timer interface will appear next to the hours input field
 3. You can:
@@ -58,6 +73,19 @@ redmine-time-tracker/
    - Click Pause to stop the timer
    - Enter time manually in the hours field
    - Click Reset to clear all values
+
+### Advanced Features
+1. Click the extension icon in the browser toolbar to:
+   - View current timer status
+   - Control the timer without switching tabs
+   - Access recent tasks you've worked on
+   - Open the settings page
+
+2. Access settings page to:
+   - Configure work break reminder intervals
+   - Change time format display (decimal or HH:MM)
+   - Export/import your time tracking data
+   - Reset settings to defaults
 
 ## Features in Detail
 
@@ -69,6 +97,7 @@ redmine-time-tracker/
 ### Manual Time Input
 - Accepts decimal hours (e.g., "0.5" for 30 minutes)
 - Supports both dot (.) and comma (,) as decimal separators
+- Configurable format (decimal or HH:MM)
 - Automatically updates the timer display and Redmine field
 
 ### Timer Controls
@@ -80,16 +109,34 @@ redmine-time-tracker/
 - Preserves timer state between page reloads
 - Handles editing of existing time entries
 - Maintains synchronization between timer and Redmine field
+- Fallback storage when extension context is invalidated
+
+### Work Break Reminders
+- Customizable reminder intervals
+- Browser notifications when it's time to take a break
+- Multiple fallback notification methods
+- Can be enabled/disabled in settings
+
+### Recent Tasks Tracking
+- Automatically saves information about tasks you work on
+- Quick access to recent tasks from the popup
+- Records time spent on each task
+
+### Data Management
+- Export your time tracking data as JSON
+- Import previously exported data
+- Clear all saved data if needed
 
 ## Browser Compatibility
 
 - Google Chrome (latest versions)
 - Chromium-based browsers (Edge, Brave, etc.)
 
-## Known Issues
+## Known Issues and Solutions
 
-- Timer state is stored per browser and not per task
-- Manual time entry requires pressing Enter or losing focus to update
+- **Extension context invalidated errors:** The extension now has multiple fallback mechanisms to prevent data loss when the extension context is invalidated
+- **Notification permissions:** The extension will request notification permissions for work break reminders
+- **Time format differences:** The extension supports both decimal and HH:MM formats for compatibility with different Redmine configurations
 
 ## Contributing
 

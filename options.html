@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Redmine Time Tracker Settings</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      line-height: 1.5;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+    .option-group {
+      margin-bottom: 20px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+    }
+    .option-group h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #444;
+    }
+    label {
+      display: block;
+      margin-bottom: 10px;
+    }
+    input[type="number"], select {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100px;
+    }
+    button {
+      padding: 10px 15px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    .success {
+      background-color: #dff0d8;
+      color: #3c763d;
+      border: 1px solid #d6e9c6;
+    }
+    .error {
+      background-color: #f2dede;
+      color: #a94442;
+      border: 1px solid #ebccd1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Redmine Time Tracker Settings</h1>
+  
+  <div class="option-group">
+    <h2>Reminder Settings</h2>
+    <label>
+      Reminder interval (minutes):
+      <input type="number" id="reminderInterval" min="1" max="1440" value="60">
+    </label>
+    <label>
+      <input type="checkbox" id="enableReminders" checked>
+      Enable work break reminders
+    </label>
+  </div>
+  
+  <div class="option-group">
+    <h2>Time Format</h2>
+    <label>
+      <input type="radio" name="timeFormat" id="formatDecimal" value="decimal" checked>
+      Decimal hours (e.g., 1.5)
+    </label>
+    <label>
+      <input type="radio" name="timeFormat" id="formatHHMM" value="hhmm">
+      HH:MM (e.g., 1:30)
+    </label>
+  </div>
+  
+  <div class="option-group">
+    <h2>Data Management</h2>
+    <button id="exportData">Export Data</button>
+    <button id="importData">Import Data</button>
+    <button id="clearData" class="danger">Clear All Data</button>
+    <input type="file" id="importFile" style="display: none;">
+  </div>
+  
+  <div id="status" class="status"></div>
+  
+  <div style="margin-top: 20px;">
+    <button id="saveSettings">Save Settings</button>
+    <button id="resetSettings">Reset to Defaults</button>
+  </div>
+  
+  <script src="options.js"></script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Redmine Time Tracker</title>
+  <style>
+    body {
+      width: 300px;
+      min-height: 200px;
+      font-family: Arial, sans-serif;
+      padding: 15px;
+      margin: 0;
+    }
+    h2 {
+      color: #333;
+      margin-top: 0;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 8px;
+    }
+    .current-timer {
+      font-size: 24px;
+      text-align: center;
+      padding: 15px 0;
+      background-color: #f9f9f9;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      flex: 1;
+      margin: 0 5px;
+    }
+    button:first-child {
+      margin-left: 0;
+    }
+    button:last-child {
+      margin-right: 0;
+    }
+    .play-button {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .pause-button {
+      background-color: #f44336;
+      color: white;
+    }
+    .reset-button {
+      background-color: #9e9e9e;
+      color: white;
+    }
+    .settings-button {
+      background-color: #2196F3;
+      color: white;
+    }
+    .status {
+      color: #777;
+      font-style: italic;
+      text-align: center;
+      margin-top: 15px;
+    }
+    .recent-tasks {
+      margin-top: 20px;
+    }
+    .task-item {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    .task-item:hover {
+      background-color: #f5f5f5;
+    }
+    .task-item .time {
+      float: right;
+      color: #666;
+    }
+    .info-message {
+      text-align: center;
+      padding: 20px;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <h2>Redmine Time Tracker</h2>
+  
+  <div id="currentActiveTimer">
+    <div class="current-timer" id="timerDisplay">00:00:00</div>
+    
+    <div class="controls">
+      <button id="playButton" class="play-button">Start</button>
+      <button id="pauseButton" class="pause-button" style="display: none;">Pause</button>
+      <button id="resetButton" class="reset-button">Reset</button>
+      <button id="settingsButton" class="settings-button">Settings</button>
+    </div>
+    
+    <div class="status" id="statusText">Not tracking time</div>
+  </div>
+  
+  <div id="noActiveTimer" class="info-message" style="display: none;">
+    No active time entry found.<br>
+    Open a Redmine time entry page to start tracking.
+  </div>
+  
+  <div class="recent-tasks">
+    <h3>Recent Tasks</h3>
+    <div id="recentTasksList">
+      <!-- Recent tasks will be populated here -->
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
